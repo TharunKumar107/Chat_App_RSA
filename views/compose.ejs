@@ -45,7 +45,7 @@
             </div>
         </nav>
         <div>
-            <form class="codehim-form" action="">
+            <form class="codehim-form" action="/send" method="post">
                 <div class="form-title">
                     <div class="user-icon gr-bg">
                        <i class="fa fa-user"></i>
@@ -53,9 +53,9 @@
                     <h2><strong>Compose your message</strong></h2>
                  </div>
                 <label for="recepient"><i class="fa fa-envelope"></i><strong>Recepient's ID:</strong></label>
-                <input type="" id="" class="cm-input" placeholder="Enter the recepint's id">
+                <input type="" id="recipient" name="recipient" class="cm-input" placeholder="Enter the recepint's id">
                 <label for="message"><i class="fa fa-lock"></i><strong>Compose your message:</strong></label>
-                <input style="width: 22em;height:11em;text-align: start;"id="text" type="text" class="cm-input" placeholder="Start typing...">
+                <input style="width: 22em;height:11em;text-align: start;"id="text" name="text" type="text" class="cm-input" placeholder="Start typing...">
                 <button type="submit" class="btn-login  gr-bg">Send</button>
             </form>
         </div>

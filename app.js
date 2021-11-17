@@ -81,6 +81,7 @@ const isSet = (req, res, next) =>{
     }
 }
 
+const {spawn} = require('child_process');
 
 // redirectors
 
@@ -113,15 +114,101 @@ app.post('/', (req,res) =>{
 });
 
 app.get('/dashboard',isSet, (req,res) =>{
-    res.status(200).render(path.join(__dirname,'/views/userdashboard.ejs'))
+    res.status(200).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:null})
 })
 
 app.get('/view',isSet, (req,res) =>{
-    res.status(200).render(path.join(__dirname,'/views/inbox.ejs'))
+    let toSend = []
+    connection.query('SELECT * FROM messages WHERE email_to = ?', [req.session.userId] , (error, rows, fields)=>{
+        if (error){
+            return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
+        }
+        // console.log(rows)
+        connection.query('SELECT * FROM public_key WHERE email = ?', [req.session.userId] , (error1, rows1, fields1)=>{
+            if (error1){
+                return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
+            }
+            else{
+                // rows.forEach((element,index) => {
+                //     const process = spawn('python', [path.join(__dirname,'/programs/srnnDecrypt.py'), element.message ,rows1[0].n,rows1[0].e,rows1[0].ua,rows1[0].d,rows1[0].a,rows1[0].u,rows1[0].r]);
+                //     process.stdout.on('data', function (data) {
+                //         decryptedMsg = data.toString();
+                //         temp = {email_from:element.email_from, message:decryptedMsg.replace(/(\r\n|\n|\r)/gm, "")}
+                //         toSend.push(temp)
+                //         console.log(toSend)
+                //         console.log(temp)
+                //     });
+                //     process.stderr.on('data', function(data){
+                //         console.log("error: ",data.toString())
+                //     });
+                    
+                // });
+                // console.log("in else")
+                // console.log(toSend)
+
+                async function something () {
+                    let toSend = []
+                    for (const element of rows) {
+                        const process = spawn('python', [path.join(__dirname,'/programs/srnnDecrypt.py'), element.message ,rows1[0].n,rows1[0].e,rows1[0].ua,rows1[0].d,rows1[0].a,rows1[0].u,rows1[0].r]);
+                        process.stdout.on('data', function (data) {
+                            decryptedMsg = data.toString();
+                            temp = {email_from:element.email_from, message:decryptedMsg.replace(/(\r\n|\n|\r)/gm, "")}
+                            toSend.push(temp)
+                            console.log(toSend)
+                            console.log(temp)
+                        });
+                        process.stderr.on('data', function(data){
+                            console.log("error: ",data.toString())
+                        });
+                    }
+                }
+                something()
+                console.log(toSend)
+                console.log("Later")
+                return res.status(200).render(path.join(__dirname,'/views/inbox.ejs'),{messageSet:toSend})
+            }
+        })
+    })
+    // console.log(toSend)
+    // console.log("Later")
+    // return res.status(200).render(path.join(__dirname,'/views/inbox.ejs'),{messageSet:toSend})
 })
 
 app.get('/send',isSet, (req,res) =>{
     res.status(200).render(path.join(__dirname,'/views/compose.ejs'))
+})
+
+app.post('/send',isSet, (req,res) =>{
+    recipient = req.body.recipient
+    message = req.body.text
+    connection.query('SELECT email FROM login WHERE email = ?', [recipient] , (error, rows, fields)=>{
+        if (error){
+            return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
+        }
+        if((!(recipient===req.session.userId)) && (recipient===rows[0].email)){
+            connection.query('SELECT * FROM public_key WHERE email = ?', [recipient] , (error, rows, fields)=>{
+                const process = spawn('python', [path.join(__dirname,'/programs/srnnEncrypt.py'), message,rows[0].n,rows[0].e,rows[0].ua]);
+                process.stdout.on('data', function (data) {
+                    encryptedMsg = data.toString();
+                    encryptedMsg = encryptedMsg.replace(/(\r\n|\n|\r)/gm, "");
+                    connection.query('INSERT INTO messages(email_from, email_to, message) VALUES (?, ?, ?)', [req.session.userId,recipient,encryptedMsg] , (error, rows, fields)=>{
+                        if (error){
+                            console.log(error)
+                            return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
+                        }
+                        return res.status(200).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Message sent successfully!"})
+                    })
+                });
+                process.stderr.on('data', function(data){
+                    console.log("error: ",data.toString())
+                })
+            })
+        }
+        else{
+            return res.status(200).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Wrong recipient! Try again!"})
+        }           
+    })
+
 })
 
 app.post('/logout',isSet ,(req,res)=>{
