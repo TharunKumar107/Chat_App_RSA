@@ -118,7 +118,6 @@ app.get('/dashboard',isSet, (req,res) =>{
 })
 
 app.get('/view',isSet, (req,res) =>{
-    let toSend = []
     connection.query('SELECT * FROM messages WHERE email_to = ?', [req.session.userId] , (error, rows, fields)=>{
         if (error){
             return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
@@ -129,49 +128,18 @@ app.get('/view',isSet, (req,res) =>{
                 return res.status(403).render(path.join(__dirname,'/views/userdashboard.ejs'),{message:"Some SQL error!"})
             }
             else{
-                // rows.forEach((element,index) => {
-                //     const process = spawn('python', [path.join(__dirname,'/programs/srnnDecrypt.py'), element.message ,rows1[0].n,rows1[0].e,rows1[0].ua,rows1[0].d,rows1[0].a,rows1[0].u,rows1[0].r]);
-                //     process.stdout.on('data', function (data) {
-                //         decryptedMsg = data.toString();
-                //         temp = {email_from:element.email_from, message:decryptedMsg.replace(/(\r\n|\n|\r)/gm, "")}
-                //         toSend.push(temp)
-                //         console.log(toSend)
-                //         console.log(temp)
-                //     });
-                //     process.stderr.on('data', function(data){
-                //         console.log("error: ",data.toString())
-                //     });
-                    
-                // });
-                // console.log("in else")
-                // console.log(toSend)
+                const process = spawn('python', [path.join(__dirname,'/programs/srnnDecrypt.py'), JSON.stringify(rows) ,rows1[0].n,rows1[0].e,rows1[0].ua,rows1[0].d,rows1[0].a,rows1[0].u,rows1[0].r]);
+                process.stdout.on('data', function (data) {
 
-                async function something () {
-                    let toSend = []
-                    for (const element of rows) {
-                        const process = spawn('python', [path.join(__dirname,'/programs/srnnDecrypt.py'), element.message ,rows1[0].n,rows1[0].e,rows1[0].ua,rows1[0].d,rows1[0].a,rows1[0].u,rows1[0].r]);
-                        process.stdout.on('data', function (data) {
-                            decryptedMsg = data.toString();
-                            temp = {email_from:element.email_from, message:decryptedMsg.replace(/(\r\n|\n|\r)/gm, "")}
-                            toSend.push(temp)
-                            console.log(toSend)
-                            console.log(temp)
-                        });
-                        process.stderr.on('data', function(data){
-                            console.log("error: ",data.toString())
-                        });
-                    }
-                }
-                something()
-                console.log(toSend)
-                console.log("Later")
-                return res.status(200).render(path.join(__dirname,'/views/inbox.ejs'),{messageSet:toSend})
+                    const result = JSON.parse(data);
+                    return res.status(200).render(path.join(__dirname,'/views/inbox.ejs'),{messageSet:result});
+                })
+                process.stderr.on('data', function(data){
+                    console.log("error: ",data.toString())
+                });
             }
         })
     })
-    // console.log(toSend)
-    // console.log("Later")
-    // return res.status(200).render(path.join(__dirname,'/views/inbox.ejs'),{messageSet:toSend})
 })
 
 app.get('/send',isSet, (req,res) =>{

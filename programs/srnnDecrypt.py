@@ -1,4 +1,4 @@
-import sys
+import sys, json
 
 def decryptSRNN(publickey,privateKey,ct):
     d,a,u,r = privateKey
@@ -25,8 +25,16 @@ def decrypt(ct,publickey,privateKey):
     pt = convertToText(m)
     return pt
 
+def printJSON(jsonF):
+    print(json.dumps(jsonF))
 
-ct = sys.argv[1]
+ct_json = json.loads(sys.argv[1])
 publickey = [int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4])]
 privatekey = [int(sys.argv[5]),int(sys.argv[6]),int(sys.argv[7]),int(sys.argv[8])]
-print(decrypt(ct,publickey,privatekey))
+for i in range(len(ct_json)):
+    decryptedmsg = decrypt(ct_json[i]['message'],publickey,privatekey)
+    ct_json[i]['message'] = decryptedmsg
+
+printJSON(ct_json)
+
+# print(decrypt(ct,publickey,privatekey))

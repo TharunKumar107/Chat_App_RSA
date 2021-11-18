@@ -54,10 +54,12 @@
                 messageSet.forEach(function(data){
             %>
             <div>
-                <h3>Message from: </h3>  <%=data.email_from %> <br>
-                <p>
-                    <%= data.message %>
-                </p>
+                <strong>
+                    <strong>Message from: </strong>  <%=data.email_from %>
+                    <p>
+                        <%= data.message %>
+                    </p>
+                </strong>
             </div>
             <%  i++; }) %>
             <% } else { %>
